@@ -1,0 +1,149 @@
+{
+  "components": [
+    {
+      "id": "webhook_1",
+      "provider": "webhook",
+      "config": {
+        "hideForm": true,
+        "mode": "Source",
+        "parameters": {},
+        "type": "webhook"
+      },
+      "ui": {
+        "position": {
+          "x": 12,
+          "y": 12
+        },
+        "measured": {
+          "width": 150,
+          "height": 196
+        },
+        "nodeType": "default",
+        "formDataValid": true
+      }
+    },
+    {
+      "id": "parse_1",
+      "provider": "parse",
+      "config": {
+        "parameters": {}
+      },
+      "ui": {
+        "position": {
+          "x": 242,
+          "y": 15
+        },
+        "measured": {
+          "width": 150,
+          "height": 158
+        },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [
+        {
+          "lane": "tags",
+          "from": "webhook_1"
+        }
+      ]
+    },
+    {
+      "id": "preprocessor_langchain_1",
+      "provider": "preprocessor_langchain",
+      "config": {
+        "profile": "default",
+        "default": {
+          "splitter": "RecursiveCharacterTextSplitter",
+          "mode": "strlen",
+          "strlen": 1024
+        },
+        "parameters": {}
+      },
+      "ui": {
+        "position": {
+          "x": 472,
+          "y": 41.5
+        },
+        "measured": {
+          "width": 150,
+          "height": 105
+        },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [
+        {
+          "lane": "text",
+          "from": "parse_1"
+        }
+      ]
+    },
+    {
+      "id": "embedding_transformer_1",
+      "provider": "embedding_transformer",
+      "config": {
+        "profile": "miniLM",
+        "parameters": {}
+      },
+      "ui": {
+        "position": {
+          "x": 684.8136318798447,
+          "y": 29.78202173625779
+        },
+        "measured": {
+          "width": 150,
+          "height": 105
+        },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [
+        {
+          "lane": "documents",
+          "from": "preprocessor_langchain_1"
+        }
+      ]
+    },
+    {
+      "id": "qdrant_1",
+      "provider": "qdrant",
+      "config": {
+        "profile": "local",
+        "local": {
+          "host": "${ROCKETRIDE_QDRANT_HOST}",
+          "port": 6333,
+          "score": 0.7,
+          "collection": "${ROCKETRIDE_QDRANT_COLLECTION}"
+        },
+        "parameters": {}
+      },
+      "ui": {
+        "position": {
+          "x": 932,
+          "y": 32.5
+        },
+        "measured": {
+          "width": 150,
+          "height": 123
+        },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [
+        {
+          "lane": "documents",
+          "from": "embedding_transformer_1"
+        }
+      ]
+    }
+  ],
+  "project_id": "506d3309-a455-4e3d-9d52-9111c25512b5",
+  "viewport": {
+    "x": 18.587739945241537,
+    "y": 153.8509664517507,
+    "zoom": 0.7111564194224614
+  },
+  "version": 1,
+  "source": "webhook_1",
+  "docRevision": 6
+}

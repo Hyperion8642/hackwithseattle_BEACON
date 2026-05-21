@@ -1,49 +1,34 @@
 // src/orchestration/dispatcher.ts
 import { IncidentPayload, ActionableResponse } from "../shared/types.js";
 
+const ORCHESTRATION_BUS_URL = process.env.ORCHESTRATION_BUS_URL || "http://localhost:5565/dispatch";
+
 export async function dispatchToRocketRide(payload: IncidentPayload): Promise<ActionableResponse> {
-  console.log(`[ROCKETRIDE] Routing incident ${payload.incidentId} to Python orchestration layer...`);
-  
-  try {
-    // Send the payload to the Python FastAPI server
-    const response = await fetch("http://localhost:8000/api/dispatch", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+  console.log(`[DISPATCHER] Incident ${payload.incidentId} from driver ${payload.driverId}`);
 
-    if (!response.ok) {
-      throw new Error(`Python server responded with status: ${response.status}`);
-    }
+  const res = await fetch(ORCHESTRATION_BUS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      incidentId: payload.incidentId,
+      driverId: payload.driverId,
+      rawText: payload.rawText,
+      simulatedLocation: payload.simulatedLocation,
+      mediaUrls: payload.mediaUrls,
+      timestamp: payload.timestamp.toISOString(),
+    }),
+  });
 
-    // Extract the final ActionableResponse sent back by Python
-    const actionPlan: ActionableResponse = await response.json();
-    return actionPlan;
-
-  } catch (error) {
-    console.error("[ROCKETRIDE] Failed to reach Python orchestration layer:", error);
-    throw error;
+  if (!res.ok) {
+    throw new Error(`Orchestration bus returned ${res.status}: ${await res.text()}`);
   }
+
+  const data = await res.json() as { summary: string; immediateSteps: string[]; eta?: string };
+  console.log(`[DISPATCHER] Response received for ${payload.incidentId}`);
+
+  return {
+    summary: data.summary,
+    immediateSteps: data.immediateSteps ?? [],
+    eta: data.eta,
+  };
 }
-
-// export async function dispatchToRocketRide(payload: IncidentPayload): Promise<ActionableResponse> {
-//   console.log(`[ROCKETRIDE] Received incident ${payload.incidentId} from driver ${payload.driverId}`);
-  
-//   // =====================================================================
-//   // TO DO: 
-//   // 1. Initialize RocketRide client here
-//   // 2. Pass 'payload' to Agent 1 (Protocol) and Agent 2 (Logistics) in parallel
-//   // 3. Pass their outputs to Agent 3 (Synthesizer)
-//   // 4. Return the final ActionableResponse object
-//   // =====================================================================
-
-//   // Temporary placeholder until they drop their code in:
-//   return {
-//     summary: "System check: RocketRide dispatcher is wired up correctly.",
-//     immediateSteps: [
-//       "Stand by for Agent 1 protocol extraction",
-//       "Stand by for Agent 2 logistics routing"
-//     ],
-//     eta: "TBD"
-//   };
-// }

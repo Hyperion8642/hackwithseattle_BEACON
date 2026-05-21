@@ -1,8 +1,16 @@
 .rocketride/
 .env
 /node_modules
-
 venv/
 *.log
 qdrant_store/
+manuals/
+data/
+storage/
+snapshots/
+.qdrant-initialized
+__pycache__/
+*.pyc
+*.pyo
 .DS_Store
+.claude/

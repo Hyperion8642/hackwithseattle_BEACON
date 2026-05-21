@@ -1,0 +1,118 @@
+{
+  "components": [
+    {
+      "id": "chat_1",
+      "provider": "chat",
+      "config": {
+        "hideForm": true,
+        "mode": "Source",
+        "parameters": {},
+        "type": "chat"
+      },
+      "ui": {
+        "position": {
+          "x": 12,
+          "y": 12
+        },
+        "measured": {
+          "width": 150,
+          "height": 126
+        },
+        "nodeType": "default",
+        "formDataValid": true
+      }
+    },
+    {
+      "id": "embedding_transformer_1",
+      "provider": "embedding_transformer",
+      "config": {
+        "profile": "miniLM",
+        "parameters": {}
+      },
+      "ui": {
+        "position": {
+          "x": 242,
+          "y": 33
+        },
+        "measured": {
+          "width": 150,
+          "height": 84
+        },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [
+        {
+          "lane": "questions",
+          "from": "chat_1"
+        }
+      ]
+    },
+    {
+      "id": "qdrant_1",
+      "provider": "qdrant",
+      "config": {
+        "profile": "local",
+        "local": {
+          "host": "${ROCKETRIDE_QDRANT_HOST}",
+          "port": 6333,
+          "score": 0,
+          "collection": "${ROCKETRIDE_QDRANT_COLLECTION}"
+        },
+        "parameters": {}
+      },
+      "ui": {
+        "position": {
+          "x": 472,
+          "y": 24.5
+        },
+        "measured": {
+          "width": 150,
+          "height": 101
+        },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [
+        {
+          "lane": "questions",
+          "from": "embedding_transformer_1"
+        }
+      ]
+    },
+    {
+      "id": "response_documents_1",
+      "provider": "response_documents",
+      "config": {
+        "laneName": "documents"
+      },
+      "ui": {
+        "position": {
+          "x": 702,
+          "y": 37
+        },
+        "measured": {
+          "width": 150,
+          "height": 76
+        },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [
+        {
+          "lane": "documents",
+          "from": "qdrant_1"
+        }
+      ]
+    }
+  ],
+  "project_id": "4002a08e-0df4-4bfa-9ddb-c8fd7079ed84",
+  "viewport": {
+    "x": 175.63186874619103,
+    "y": 130.82311173131228,
+    "zoom": 0.49975222463540175
+  },
+  "version": 1,
+  "docRevision": 2,
+  "source": "chat_1"
+}
