@@ -4,6 +4,7 @@
   "type": "module",
   "dependencies": {
     "dotenv": "^17.4.2",
+    "rocketride": "^1.0.6",
     "spectrum-ts": "^1.9.2"
   }
 }

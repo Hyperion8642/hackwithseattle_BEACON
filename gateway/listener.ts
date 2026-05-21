@@ -1,42 +1,54 @@
 // src/gateway/listener.ts
 import { parseIncidentData } from "./parser.js";
 import { ActionableResponse } from "../shared/types.js";
+import { RocketRideClient, Question } from "rocketride";
 
 export async function startListener(app: any) {
   console.log("📡 BEACON Gateway listening for emergency payloads...");
   
-  for await (const [space, message] of app.messages) {
-    // Skip messages that aren't user texts (like system events)
-    //if (message.content.type !== "text" && !message.content.attachments) continue;
+  // Initialize RocketRide Client
+  const client = new RocketRideClient({
+    uri: process.env.ROCKETRIDE_URI || 'ws://localhost:5565',
+    auth: process.env.ROCKETRIDE_APIKEY
+  });
 
+  try {
+    await client.connect();
+    console.log("✅ Connected to RocketRide Engine.");
+  } catch (e) {
+    console.error("❌ Failed to connect to RocketRide Engine. Ensure it is running.", e);
+  }
+
+  for await (const [space, message] of app.messages) {
     console.log(`\n[ALERT] Incoming report from ${message.sender.id}`);
 
-    // 1. Parse the incoming message
     const payload = parseIncidentData(message);
     console.log("📦 Parsed Payload ready for RocketRide:", payload);
 
-    // 2. Trigger the native typing indicator
     await space.responding(async () => {
+      console.log("🚀 Dispatching to RocketRide pipeline...");
       
-      // 3. MOCK ORCHESTRATION: Simulate the delay of Agents 1 & 2 vector searching
-      await new Promise(resolve => setTimeout(resolve, 2500)); 
-      
-      // This is what dispatchToRocketRide(payload) will eventually return
-      const mockFinalPlan: ActionableResponse = {
-         summary: "Mechanical failure categorized. Dispatching heavy tow unit to 3rd & Pine.",
-         immediateSteps: [
-           "Secure the vehicle and engage parking brake",
-           "Do NOT attempt to restart the engine",
-           "Keep passengers onboard unless cabin is compromised by fluids"
-         ],
-         eta: "14 minutes"
-      };
-      
-      // 4. Format and send the response back to the driver
-      const replyText = `🚨 PROTOCOL ACTIVE\n\nImmediate Steps:\n- ${mockFinalPlan.immediateSteps.join('\n- ')}\n\nETA: ${mockFinalPlan.eta}\n${mockFinalPlan.summary}`;
-      
-      await message.reply(replyText);
+      try {
+        const { token } = await client.use({ filepath: 'pipelines/beacon_dispatch.pipe' });
+        
+        const question = new Question({ expectJson: true });
+        question.addQuestion(`DRIVER REPORT: ${payload.driver_text} | LOC: ${payload.gps} | OP: ${payload.operator_id}`);
+        
+        const rrResponse = await client.chat({ token, question });
+        
+        let finalPlan;
+        if (rrResponse.answers && rrResponse.answers.length > 0) {
+            finalPlan = rrResponse.answers[0]; // expectJson=true parses the JSON
+        } else {
+            throw new Error("No answer received from pipeline");
+        }
+        
+        const replyText = `🚨 PROTOCOL ACTIVE\n\nImmediate Steps:\n- ${(finalPlan.immediateSteps || []).join('\n- ')}\n\nETA: ${finalPlan.eta || 'Unknown'}\n${finalPlan.summary || ''}`;
+        await message.reply(replyText);
+      } catch (err: any) {
+        console.error("Pipeline Execution Error:", err);
+        await message.reply(`🚨 SYSTEM ERROR\n\nUnable to reach RocketRide Orchestrator. Initiating fallback protocols.\nError: ${err.message}`);
+      }
     });
   }
-
 }

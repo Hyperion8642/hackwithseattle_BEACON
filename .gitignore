@@ -1,3 +1,8 @@
 .rocketride/
 .env
 /node_modules
+
+venv/
+*.log
+qdrant_store/
+.DS_Store
