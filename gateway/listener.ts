@@ -8,7 +8,7 @@ export async function startListener(app: any) {
   
   // Initialize RocketRide Client
   const client = new RocketRideClient({
-    uri: process.env.ROCKETRIDE_URI || 'ws://localhost:5565',
+    uri: process.env.ROCKETRIDE_URI || 'ws://localhost:20000',
     auth: process.env.ROCKETRIDE_APIKEY
   });
 

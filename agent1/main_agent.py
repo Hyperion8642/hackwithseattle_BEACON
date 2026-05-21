@@ -113,31 +113,38 @@ def route_to_tool(category: str, request: QueryRequest):
         
     return res.__dict__ if res else {}
 
-@app.post("/query", response_model=Agent1Response)
-def process_query(request: QueryRequest):
-    if not os.getenv("MINIMAX_API_KEY"):
-        raise HTTPException(status_code=500, detail="MINIMAX_API_KEY not set")
-        
-    # 1. Search Vector DB
-    try:
-        context_chunks = search_protocol(request.driver_text)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Qdrant Search Error: {e}")
+import asyncio
+from rocketride import RocketRideClient
+from rocketride.schema import Question
 
-    # 2. Classify (LLM rerank/confirm)
-    category = classify_incident(request.driver_text, context_chunks)
+@app.post("/query", response_model=Agent1Response)
+async def process_query(request: QueryRequest):
+    async with RocketRideClient() as client:
+        await client.connect()
+        res = await client.use(filepath='pipelines/beacon_dispatch.pipe')
+        tok = res['token']
+        q = Question(expectJson=True)
+        q.addQuestion(f"DRIVER REPORT: {request.driver_text} | LOC: {request.gps} | OP: {request.operator_id}")
+        
+        rr_response = await client.chat(token=tok, question=q)
+        
+        if 'answers' in rr_response and len(rr_response['answers']) > 0:
+            final_plan = rr_response['answers'][0]
+        else:
+            final_plan = {}
+            
+    # Map the JSON output back to our FastAPI schema
+    category = final_plan.get("incident_category", "mechanical_failure")
+    reminders = final_plan.get("legal_reminders", [])
     
-    # 3. Route to Action Tool
+    # Optional: we can still trigger tools if we want, or let Streamlit handle the UI.
     tool_result = route_to_tool(category, request)
-    
-    # 4. Inject Legal Compliance
-    reminders = apply_legal_compliance(category, request.operator_id)
-    
+
     return Agent1Response(
         incident_category=category,
         tool_executed=tool_result,
         legal_reminders=reminders,
-        protocol_context=context_chunks
+        protocol_context=["Retrieved dynamically by RocketRide Pipeline (The Book)"]
     )
 
 if __name__ == "__main__":

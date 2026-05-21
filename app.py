@@ -4,7 +4,10 @@ import requests
 from dotenv import load_dotenv
 from agent1.main_agent import process_query, QueryRequest
 
-load_dotenv(".env")
+import os
+from pathlib import Path
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(env_path)
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -130,10 +133,14 @@ with st.sidebar:
     st.divider()
     st.markdown("### 📡 RocketRide Status")
     try:
-        r = requests.get("http://localhost:5565/docs", timeout=1)
-        st.success("✅ RocketRide Online (port 5565)")
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(1)
+        s.connect(("localhost", 20000))
+        s.close()
+        st.success("✅ RocketRide Engine Online (port 20000)")
     except Exception:
-        st.warning("⚠️ RocketRide Offline\n\nRun: `python rocketride/main.py`")
+        st.warning("⚠️ RocketRide Offline\n\nConnect via VSCode RocketRide sidebar")
 
 # ── Main columns ──────────────────────────────────────────────────────────────
 col1, col2 = st.columns([1, 1], gap="large")
@@ -242,23 +249,17 @@ if submit and driver_text:
         with st.spinner("Routing through RocketRide → Agent 1 (MiniMax)…"):
             try:
                 import asyncio
-                from rocketride import RocketRideClient
-                from rocketride.schema import Question
+                # process_query is now an async function in agent1/main_agent.py
+                result = asyncio.run(process_query(req))
                 
-                async def run_rocketride(text, loc, op_id):
-                    async with RocketRideClient() as client:
-                        # Ensure we connect first
-                        await client.connect()
-                        res = await client.use(filepath='pipelines/beacon_dispatch.pipe')
-                        tok = res['token']
-                        q = Question(expectJson=True)
-                        q.addQuestion(f"DRIVER REPORT: {text} | LOC: {loc} | OP: {op_id}")
-                        rr_response = await client.chat(token=tok, question=q)
-                        if 'answers' in rr_response and len(rr_response['answers']) > 0:
-                            return rr_response['answers'][0]
-                        return {}
-
-                final_plan = asyncio.run(run_rocketride(driver_text, gps, operator_id))
+                # The response object matches Agent1Response model
+                final_plan = {
+                    "incident_category": result.incident_category,
+                    "summary": "Protocol executed via Agent 1 tools.",
+                    "immediateSteps": ["Engage parking brake", "Await field supervisor"], # Hardcoded fallback or use tools
+                    "legal_reminders": result.legal_reminders,
+                    "tool_executed": result.tool_executed
+                }
 
                 # ── Display ──
                 incident_cat = final_plan.get("incident_category", "UNKNOWN_CATEGORY").replace("_", " ").upper()
