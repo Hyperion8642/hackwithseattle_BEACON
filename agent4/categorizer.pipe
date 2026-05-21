@@ -1,0 +1,130 @@
+{
+  "project_id": "daeb4cc9-ec6d-44df-b9eb-f34aa96384c2",
+  "components": [
+    {
+      "id": "response_answers_1",
+      "provider": "response_answers",
+      "config": {
+        "laneName": "answers"
+      },
+      "ui": {
+        "position": {
+          "x": 1029.6245288216098,
+          "y": 641.1482929724773
+        },
+        "measured": {
+          "width": 150,
+          "height": 66
+        },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [
+        {
+          "lane": "answers",
+          "from": "llm_gemini_1"
+        }
+      ]
+    },
+    {
+      "id": "prompt_1",
+      "provider": "prompt",
+      "name": "Prompt",
+      "config": {
+        "instructions": [
+          "You are an emergency transit dispatcher AI. Your job is to classify incoming driver reports. You must categorize the report into exactly ONE of the following categories: - MECHANICAL - WEATHER - MEDICAL - COLLISION - OTHER  Rules: - Output ONLY the exact category word. - Do not add punctuation, explanations, or introductory text.  Driver Report: {{text}} Category:"
+        ],
+        "parameters": {
+          "google": {}
+        }
+      },
+      "ui": {
+        "position": {
+          "x": 750.3230349954791,
+          "y": 563.4428711170199
+        },
+        "measured": {
+          "width": 150,
+          "height": 119
+        },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [
+        {
+          "lane": "text",
+          "from": "webhook_1"
+        }
+      ]
+    },
+    {
+      "id": "webhook_1",
+      "provider": "webhook",
+      "name": "Web Hook (input message)",
+      "config": {
+        "hideForm": true,
+        "mode": "Source",
+        "parameters": {},
+        "type": "webhook"
+      },
+      "ui": {
+        "position": {
+          "x": 539.9161166025335,
+          "y": 408.3942672808396
+        },
+        "measured": {
+          "width": 150,
+          "height": 169
+        },
+        "nodeType": "default",
+        "formDataValid": true
+      }
+    },
+    {
+      "id": "llm_gemini_1",
+      "provider": "llm_gemini",
+      "name": "Gemini Flash",
+      "config": {
+        "profile": "gemini-2_5-flash-lite",
+        "gemini-3-pro": {
+          "apikey": "AIzaSyB1TT60jYMUJLhugo9CYfuFfTZFD465Glw"
+        },
+        "parameters": {
+          "google": {}
+        },
+        "gemini-2_0-flash-lite": {
+          "apikey": "AIzaSyB1TT60jYMUJLhugo9CYfuFfTZFD465Glw"
+        },
+        "gemini-2_5-flash-lite": {
+          "apikey": "AIzaSyB1TT60jYMUJLhugo9CYfuFfTZFD465Glw"
+        }
+      },
+      "ui": {
+        "position": {
+          "x": 901.3718637283728,
+          "y": 436.8855803912699
+        },
+        "measured": {
+          "width": 150,
+          "height": 66
+        },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [
+        {
+          "lane": "questions",
+          "from": "prompt_1"
+        }
+      ]
+    }
+  ],
+  "viewport": {
+    "x": -850.4199641298044,
+    "y": -587.6459443880274,
+    "zoom": 1.7153734368548617
+  },
+  "version": 1,
+  "docRevision": 56,
+  "source": "webhook_1"
+}
