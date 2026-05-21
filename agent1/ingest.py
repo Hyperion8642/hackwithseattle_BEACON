@@ -79,14 +79,34 @@ def main():
     chunks = get_text_chunks()
     print(f"Embedding {len(chunks)} chunks...")
     
-    points = []
+    # RocketRide requires a control document to validate the collection
+    dim = model.get_sentence_embedding_dimension()
+    schema_point = PointStruct(
+        id=999999, # Arbitrary ID for schema
+        vector=[0.0] * dim,
+        payload={
+            "objectId": "schema",
+            "isDeleted": True,
+            "metadata": {
+                "vectorSize": dim,
+                "modelName": EMBEDDING_MODEL
+            }
+        }
+    )
+    points = [schema_point]
+    
     for i, chunk in enumerate(chunks):
         vector = model.encode(chunk["text"]).tolist()
         points.append(
             PointStruct(
                 id=i,
                 vector=vector,
-                payload={"text": chunk["text"], "page": chunk["page"]}
+                payload={
+                    "objectId": f"doc_{i}",
+                    "isDeleted": False,
+                    "text": chunk["text"], 
+                    "page": chunk["page"]
+                }
             )
         )
     
